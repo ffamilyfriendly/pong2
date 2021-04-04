@@ -5,7 +5,8 @@ namespace game {
 
 	enum screen {
 		menu,
-		game
+		game,
+		intro,
 	};
 
     class racket {

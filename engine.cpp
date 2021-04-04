@@ -9,7 +9,16 @@ game::ball *ball = new game::ball();
 int width = 1920;
 int height = 1080;
 float transitionCoefficient = 0.1;
-game::screen mode = game::screen::menu;
+std::string ip = "";
+game::screen mode = game::screen::intro;
+
+enum netWorkingStats {
+	establishingServer,
+	establishingConnection,
+	connectionError,
+	none
+};
+netWorkingStats net = netWorkingStats::none;
 
 void _drawGame() {
 	game::drawGame(p1,p2);
@@ -18,17 +27,34 @@ void _drawGame() {
 	ball->draw();
 }
 
+void tryEstablishConnection() {
+	net = netWorkingStats::establishingConnection;
+}
+
+void tryEstablishServer() {
+	net = netWorkingStats::establishingServer;
+}
+
 void drawMenu() {
-	if(transitionCoefficient > 1) {
-		game::centerText(0.5,"Menu");
-		game::centerText(0.5 - 0.02 - game::getTextHeight(GLUT_BITMAP_HELVETICA_12),"use up/down arrows to navigate", GLUT_BITMAP_HELVETICA_12);
-		game::centerText(0, "connect");
-		game::centerText(0 - game::getTextHeight(GLUT_BITMAP_TIMES_ROMAN_24),"ip: ", GLUT_BITMAP_HELVETICA_12);
-	} else {
-		game::centerText(transitionCoefficient + 0,"Welcome to pong2");
-		game::centerText(transitionCoefficient + 0 - 0.02 - game::getTextHeight(GLUT_BITMAP_HELVETICA_18),"the best game ever", GLUT_BITMAP_HELVETICA_18);
-		game::centerText(transitionCoefficient + 0 - 0.02 - game::getTextHeight(GLUT_BITMAP_HELVETICA_18) - 0.02 - game::getTextHeight(GLUT_BITMAP_HELVETICA_12),"by family friendly", GLUT_BITMAP_HELVETICA_12);
+	game::centerText(0, "connect to:");
+	game::centerText(0 - game::getTextHeight(GLUT_BITMAP_TIMES_ROMAN_24),"ip: " + ip, GLUT_BITMAP_HELVETICA_12);
+	game::drawText(-1 + 0.1,-1 + 0.1,"write \"1337\" as ip to host game");
+
+	switch(net) {
+		case netWorkingStats::establishingServer:
+			game::centerText(1 - 0.01 - game::getTextHeight(),"Establishing server...");
+		break;
+		case netWorkingStats::establishingConnection:
+			game::centerText(1 - 0.01 - game::getTextHeight(),"Establishing connection...");
+		break;
 	}
+}
+
+void drawIntro() {
+	if(transitionCoefficient > 1) mode = game::screen::menu;
+	game::centerText(transitionCoefficient + 0,"Welcome to pong2");
+	game::centerText(transitionCoefficient + 0 - 0.02 - game::getTextHeight(GLUT_BITMAP_HELVETICA_18),"the best game ever", GLUT_BITMAP_HELVETICA_18);
+	game::centerText(transitionCoefficient + 0 - 0.02 - game::getTextHeight(GLUT_BITMAP_HELVETICA_18) - 0.02 - game::getTextHeight(GLUT_BITMAP_HELVETICA_12),"by family friendly", GLUT_BITMAP_HELVETICA_12);
 }
 
 //funcs
@@ -37,6 +63,9 @@ void render(void) {
 	switch(mode) {
 		case game::screen::menu:
 			drawMenu();
+		break;
+		case game::screen::intro:
+			drawIntro();
 		break;
 		case game::screen::game:
 			_drawGame();
@@ -48,13 +77,24 @@ void render(void) {
 
 
 void keyboard(unsigned char c, int x, int y) {
-    if(c == 'w') {
-        //up
-        p1->moveUp();
-    } else if(c == 's') {
-        //down
-        p1->moveDown();
-    }
+	if(mode == game::screen::menu) {
+		if(std::isdigit(c)|| c == '.') {
+			ip += c;
+		} else if(c == 8) {
+			ip = ip.substr(0,ip.size()-1);
+		} else if(c == 13) {
+			if(ip == "1337") tryEstablishServer();
+			else tryEstablishConnection();
+		}
+	} else {
+		if(c == 'w') {
+			//up
+			p1->moveUp();
+		} else if(c == 's') {
+			//down
+			p1->moveDown();
+		}
+	}
 };
 
 
@@ -101,7 +141,7 @@ void bigThink() {
 }
 
 void update(int value) {
-	if(mode == game::screen::menu && transitionCoefficient <= 1) transitionCoefficient *= 1.007;
+	if(mode == game::screen::intro && transitionCoefficient <= 1) transitionCoefficient *= 1.007;
     moveBall();
     glutTimerFunc(1000/60,update,0);
 }

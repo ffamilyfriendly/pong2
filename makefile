@@ -4,7 +4,8 @@ flags= \
 
 sources = \
 	engine.cpp \
-	elements.cpp
+	elements.cpp \
+	net.cpp
 
 all:
 	g++ ${sources} ${flags} -o game
